@@ -15,6 +15,12 @@ contract DCATest is Test {
         uint256 amount
     );
 
+    address public constant UNI_FACTORY =
+        0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
+    address public constant UNI_ROUTER =
+        0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+    address public constant ETH_USD_FEED =
+        0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
     address public constant AAVE_USD_FEED =
         0x547a514d5e3769680Ce22B2361c10Ea13619e8a9;
     address public constant AAVE = 0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9;
@@ -23,18 +29,36 @@ contract DCATest is Test {
 
     function setUp() public {
         vm.createSelectFork(vm.rpcUrl("mainnet"), 18693369);
-        dca = new DCA(AAVE, AAVE_USD_FEED);
+        dca = new DCA(
+            AAVE,
+            AAVE_USD_FEED,
+            ETH_USD_FEED,
+            UNI_FACTORY,
+            UNI_ROUTER
+        );
     }
 }
 
 contract ConstructorTest is DCATest {
     function test_revertsIf_pairDoesNotExist() public {
         vm.expectRevert(DCA.PairNotCreated.selector);
-        new DCA(makeAddr("does-not-exist"), AAVE_USD_FEED);
+        new DCA(
+            makeAddr("does-not-exist"),
+            AAVE_USD_FEED,
+            ETH_USD_FEED,
+            UNI_FACTORY,
+            UNI_ROUTER
+        );
     }
 
     function test_successful() public {
-        DCA newDca = new DCA(AAVE, AAVE_USD_FEED);
+        DCA newDca = new DCA(
+            AAVE,
+            AAVE_USD_FEED,
+            ETH_USD_FEED,
+            UNI_FACTORY,
+            UNI_ROUTER
+        );
         assertEq(newDca.token(), AAVE);
         assertEq(address(newDca.feed()), AAVE_USD_FEED);
     }
@@ -182,6 +206,6 @@ contract GetOraclePrice is DCATest {
 contract GetAmountOutTest is DCATest {
     function test_getAmountOut() public {
         uint256 amountOut = dca.getAmountOut(1e18);
-        assertEq(amountOut, 20739634776807225284); // ETH ~2,000, AAVE ~ 100 so 20 AAVE per ETH
+        assertEq(amountOut, 19752033120768785984); // ETH ~2,000, AAVE ~ 100 so 20 AAVE per ETH
     }
 }

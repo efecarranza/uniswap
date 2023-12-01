@@ -53,27 +53,32 @@ contract DCA is Ownable {
         Frequency frequency;
     }
 
-    address public constant UNI_FACTORY =
-        0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
-    address public constant UNI_ROUTER =
-        0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+    address public immutable factory;
+    address public immutable router;
 
-    AggregatorV3Interface public constant ethFeed =
-        AggregatorV3Interface(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
-
+    AggregatorV3Interface public immutable ethFeed;
     AggregatorV3Interface public immutable feed;
 
     address public immutable token;
 
     mapping(address user => Investment dca) private investments;
 
-    constructor(address _swapToken, address _feed) Ownable(msg.sender) {
+    constructor(
+        address _swapToken,
+        address _feed,
+        address _ethFeed,
+        address _uniFactory,
+        address _uniRouter
+    ) Ownable(msg.sender) {
         token = _swapToken;
         feed = AggregatorV3Interface(_feed);
+        ethFeed = AggregatorV3Interface(_ethFeed);
+        factory = _uniFactory;
+        router = _uniRouter;
 
-        address pair = IUniswapV2Factory(UNI_FACTORY).getPair(
+        address pair = IUniswapV2Factory(factory).getPair(
             token,
-            IUniswapV2Router02(UNI_ROUTER).WETH()
+            IUniswapV2Router02(router).WETH()
         );
         if (pair == address(0)) revert PairNotCreated();
     }
@@ -119,10 +124,10 @@ contract DCA is Ownable {
             tempInvestment.toInvest -= toPurchase;
 
             address[] memory path = new address[](2);
-            path[0] = IUniswapV2Router02(UNI_ROUTER).WETH();
+            path[0] = IUniswapV2Router02(router).WETH();
             path[1] = token;
 
-            uint[] memory amountsOut = IUniswapV2Router02(UNI_ROUTER)
+            uint[] memory amountsOut = IUniswapV2Router02(router)
                 .swapExactETHForTokens{value: toPurchase}(
                 getAmountOut(toPurchase),
                 path,
